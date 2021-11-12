@@ -37,7 +37,12 @@ def find_item_id(name):
 
     url = 'https://www.supremenewyork.com/mobile_stock.json'
 
-    html = session.get(url=url, headers=headers, timeout=10)
+    while(True):
+        try:
+            html = session.get(url=url, headers=headers, timeout=10)
+            break
+        except:
+            continue
     output = json.loads(html.text)
 
     for category in output['products_and_categories']:
@@ -55,7 +60,12 @@ def find_item(product_id, colour, size):
 
     url = 'https://www.supremenewyork.com/shop/' + str(product_id) + '.json'
 
-    html = session.get(url=url, headers=headers, timeout=10)
+    while(True):
+        try:
+            html = session.get(url=url, headers=headers, timeout=10)
+            break
+        except:
+            continue
     output = json.loads(html.text)
 
     for product_colours in output['styles']:
@@ -76,21 +86,35 @@ def get_product(product_id, product_colour_id, size):
         url = 'https://www.supremenewyork.com/mobile/#products/' + \
             str(product_id)
 
-    driver.get(url)
-
+    while(True):
+        try:
+            driver.get(url)
+            break
+        except:
+            continue
     if ProductDetails.SIZE:
         wait.until(EC.presence_of_element_located((By.ID, 'size-options')))
         options = Select(driver.find_element_by_id('size-options'))
         options.select_by_visible_text(size)
 
-    driver.find_element_by_xpath("//*[@id='cart-update']/span").click()
+    while(True):
+        try:
+            driver.find_element_by_xpath("//*[@id='cart-update']/span").click()
+            break
+        except:
+            continue
 
 
 def checkout():
     """
     Inputs checkout details
     """
-    driver.get('https://www.supremenewyork.com/mobile/#checkout')
+    while(True):
+        try:
+            driver.get('https://www.supremenewyork.com/mobile/#checkout')
+            break
+        except:
+            continue
 
     wait.until(EC.presence_of_element_located((By.ID, 'order_billing_name')))
     driver.execute_script(
@@ -115,8 +139,10 @@ def checkout():
     card_year = Select(driver.find_element_by_id('credit_card_year'))
     card_year.select_by_value(str(PaymentDetails.EXP_YEAR))
 
-    driver.find_element_by_id('order_terms').click()
+    wait.until(EC.presence_of_element_located((By.ID, 'order_terms')))
+    wait.until(EC.presence_of_element_located((By.ID, 'submit_button')))
 
+    driver.find_element_by_id('order_terms').click()
     driver.find_element_by_id('submit_button').click()
 
 
