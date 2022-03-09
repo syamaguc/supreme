@@ -8,6 +8,8 @@ import requests
 import json
 import time
 from config import ProductDetails, UserDetails, PaymentDetails, ChromeOptions
+from webdriver_manager.chrome import ChromeDriverManager
+import shutil
 
 headers = {'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, '
                          'like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1'}
@@ -23,9 +25,11 @@ options = Options()
 options.add_experimental_option("mobileEmulation", mobile_emulation)
 options.add_experimental_option('prefs', prefs)
 options.add_experimental_option("useAutomationExtension", False)
+options.binary_location = shutil.which("google-chrome-stable")
+driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
-driver = webdriver.Chrome(
-    options=options, executable_path=ChromeOptions.CHROME_DRIVER_PATH)
+# driver = webdriver.Chrome(
+#     options=options, executable_path=ChromeOptions.CHROME_DRIVER_PATH)
 wait = WebDriverWait(driver, 10)
 session = requests.Session()
 
@@ -93,13 +97,20 @@ def get_product(product_id, product_colour_id, size):
         except:
             continue
     if ProductDetails.SIZE:
-        wait.until(EC.presence_of_element_located((By.ID, 'size-options')))
-        options = Select(driver.find_element_by_id('size-options'))
+        while(True):
+            try:
+                wait.until(EC.presence_of_element_located(
+                    (By.ID, 'size-options')))
+                break
+            except:
+                continue
+        options = Select(driver.find_element(By.ID, 'size-options'))
         options.select_by_visible_text(size)
 
     while(True):
         try:
-            driver.find_element_by_xpath("//*[@id='cart-update']/span").click()
+            driver.find_element(
+                By.XPATH, "//*[@id='cart-update']/span").click()
             break
         except:
             continue
@@ -116,34 +127,42 @@ def checkout():
         except:
             continue
 
-    wait.until(EC.presence_of_element_located((By.ID, 'order_billing_name')))
-    driver.execute_script(
-        f'document.getElementById("order_billing_name").value="{UserDetails.NAME}";'
-        f'document.getElementById("order_email").value="{UserDetails.EMAIL}";'
-        f'document.getElementById("order_tel").value="{UserDetails.TELE}";'
-        f'document.getElementById("order_billing_city").value="{UserDetails.CITY}";'
-        f'document.getElementById("order_billing_address").value="{UserDetails.ADDRESS}";'
-        f'document.getElementById("order_billing_zip").value="{UserDetails.POSTCODE}";'
-        f'document.getElementById("credit_card_n").value="{PaymentDetails.CARD_NUMBER}";'
-        f'document.getElementById("credit_card_cvv").value="{PaymentDetails.CVV}";'
-    )
-    state = Select(driver.find_element_by_id('order_billing_state'))
+    while(True):
+        try:
+            wait.until(EC.presence_of_element_located(
+                (By.ID, 'order_billing_name')))
+            driver.execute_script(
+                f'document.getElementById("order_billing_name").value="{UserDetails.NAME}";'
+                f'document.getElementById("order_email").value="{UserDetails.EMAIL}";'
+                f'document.getElementById("order_tel").value="{UserDetails.TELE}";'
+                f'document.getElementById("order_billing_city").value="{UserDetails.CITY}";'
+                f'document.getElementById("order_billing_address").value="{UserDetails.ADDRESS}";'
+                f'document.getElementById("order_billing_zip").value="{UserDetails.POSTCODE}";'
+                f'document.getElementById("credit_card_number").value="{PaymentDetails.CARD_NUMBER}";'
+                f'document.getElementById("credit_card_cvv").value="{PaymentDetails.CVV}";'
+            )
+            break
+        except:
+            continue
+
+    state = Select(driver.find_element(By.ID, 'order_billing_state'))
     state.select_by_value(str(UserDetails.STATE))
 
-    card_type = Select(driver.find_element_by_id('credit_card_type'))
-    card_type.select_by_value(str(PaymentDetails.TYPE))
+    # 2022SSからなくなった
+    # card_type = Select(driver.find_element(By.ID,'credit_card_type'))
+    # card_type.select_by_value(str(PaymentDetails.TYPE))
 
-    card_month = Select(driver.find_element_by_id('credit_card_month'))
+    card_month = Select(driver.find_element(By.ID, 'credit_card_month'))
     card_month.select_by_value(str(PaymentDetails.EXP_MONTH))
 
-    card_year = Select(driver.find_element_by_id('credit_card_year'))
+    card_year = Select(driver.find_element(By.ID, 'credit_card_year'))
     card_year.select_by_value(str(PaymentDetails.EXP_YEAR))
 
     wait.until(EC.presence_of_element_located((By.ID, 'order_terms')))
     wait.until(EC.presence_of_element_located((By.ID, 'submit_button')))
 
-    driver.find_element_by_id('order_terms').click()
-    driver.find_element_by_id('submit_button').click()
+    driver.find_element(By.ID, 'order_terms').click()
+    driver.find_element(By.ID, 'submit_button').click()
 
 
 if __name__ == '__main__':
